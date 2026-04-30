@@ -52,13 +52,38 @@ module.exports = {
       config: {
         projectId: 12345678,
         directAssetPathPrefix: '{platform}/{arch}',
+        generateUpdateFeed: {
+          darwin: true,
+        },
       },
     },
   ],
 };
 ```
 
-That publishes release links with direct asset paths such as `/darwin/arm64/RELEASES.json` and `/win32/x64/RELEASES`. The generic package file path is also nested under the same explicit prefix, so same-named update feed files from different platform/arch builds do not collide.
+That publishes release links with direct asset paths such as `/darwin/arm64/RELEASES.json`, `/darwin/arm64/My.App.zip`, and `/win32/x64/RELEASES`. The generic package file path is also nested under the same explicit prefix, so same-named update feed files from different platform/arch builds do not collide.
+
+`generateUpdateFeed.darwin` is opt-in. When enabled, the publisher synthesizes a Squirrel.Mac `RELEASES.json` for each darwin ZIP artifact, uploads it beside the ZIP, and writes the ZIP's GitLab release-download URL into the manifest. By default, generated manifests point to GitLab's latest-release permalink for the ZIP asset. Use `release: 'tag'` if each manifest should point at the concrete release tag instead:
+
+```js
+module.exports = {
+  publishers: [
+    {
+      name: '@automaited/electron-forge-gitlab-publisher',
+      config: {
+        projectId: 12345678,
+        directAssetPathPrefix: '{platform}/{arch}',
+        generateUpdateFeed: {
+          darwin: {
+            fileName: 'RELEASES.json',
+            release: 'tag',
+          },
+        },
+      },
+    },
+  ],
+};
+```
 
 You can also compute the prefix per artifact:
 
@@ -114,6 +139,7 @@ By default, `GITLAB_TOKEN` and `GITLAB_PRIVATE_TOKEN` use the `PRIVATE-TOKEN` he
 | `packageVersion` | `string \| function` | app version | Generic package version. Strings support `{version}` and `{tagName}`. |
 | `linkType` | `'other' \| 'runbook' \| 'image' \| 'package'` | `package` | GitLab release link type. |
 | `directAssetPathPrefix` | `string \| function \| false` | `/artifacts` | Prefix for GitLab direct asset links. Strings support `{platform}`, `{arch}`, `{version}`, `{tagName}`, `{artifactName}`, `{packageFileName}`, `{packageName}`, and `{packageVersion}`. Functions receive per-artifact context. Set to `false` to omit `direct_asset_path`. When explicitly set to a string or function, the generic package file path is nested under the resolved prefix as well. |
+| `generateUpdateFeed` | `{ darwin?: boolean \| { fileName?: string, release?: 'latest' \| 'tag' } }` | | Opt-in generated update feeds. `darwin: true` synthesizes `RELEASES.json` for darwin ZIP artifacts. `fileName` defaults to `RELEASES.json`; `release` defaults to `latest`. |
 | `force` | `boolean` | `false` | Replace existing release links and generic package files. |
 
 ## Self-managed GitLab

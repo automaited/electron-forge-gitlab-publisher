@@ -112,4 +112,38 @@ describe('GitLab', () => {
       );
     });
   });
+
+  describe('release asset download URLs', () => {
+    it('builds latest-release asset download URLs', () => {
+      const gitlab = new GitLab(undefined, false, {
+        apiUrl: 'https://gitlab.example.com/api/v4',
+      });
+
+      expect(
+        gitlab.releaseAssetDownloadUrl(
+          '1',
+          'permalink/latest',
+          '/darwin/arm64/My App.zip',
+        ),
+      ).toEqual(
+        'https://gitlab.example.com/api/v4/projects/1/releases/permalink/latest/downloads/darwin/arm64/My%20App.zip',
+      );
+    });
+
+    it('builds tag-specific asset download URLs', () => {
+      const gitlab = new GitLab(undefined, false, {
+        apiUrl: 'https://gitlab.example.com/api/v4',
+      });
+
+      expect(
+        gitlab.releaseAssetDownloadUrl(
+          'group%2Fdesktop',
+          'release/1.2.3',
+          '/darwin/arm64/My App.zip',
+        ),
+      ).toEqual(
+        'https://gitlab.example.com/api/v4/projects/group%2Fdesktop/releases/release%2F1.2.3/downloads/darwin/arm64/My%20App.zip',
+      );
+    });
+  });
 });

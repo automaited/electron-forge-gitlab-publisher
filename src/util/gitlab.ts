@@ -212,6 +212,28 @@ export default class GitLab {
     );
   }
 
+  async uploadGenericPackageContent(
+    projectId: string,
+    packageName: string,
+    packageVersion: string,
+    packageFilePath: string,
+    content: Buffer | string,
+    contentType = 'application/octet-stream',
+  ): Promise<void> {
+    await this.request<void>(
+      `projects/${projectId}/packages/generic/${encodeURIComponent(packageName)}/${encodeURIComponent(packageVersion)}/${GitLab.encodePackageFilePath(packageFilePath)}`,
+      {
+        method: 'PUT',
+        body: content as RequestInit['body'],
+        headers: {
+          'content-length': String(Buffer.byteLength(content)),
+          'content-type': contentType,
+        },
+        expectedStatuses: [201],
+      },
+    );
+  }
+
   genericPackageFileUrl(
     projectId: string,
     packageName: string,
@@ -220,6 +242,19 @@ export default class GitLab {
   ): string {
     return this.makeUrl(
       `projects/${projectId}/packages/generic/${encodeURIComponent(packageName)}/${encodeURIComponent(packageVersion)}/${GitLab.encodePackageFilePath(packageFilePath)}`,
+    );
+  }
+
+  releaseAssetDownloadUrl(
+    projectId: string,
+    release: string,
+    directAssetPath: string,
+  ): string {
+    const releasePath =
+      release === 'permalink/latest' ? release : encodeURIComponent(release);
+
+    return this.makeUrl(
+      `projects/${projectId}/releases/${releasePath}/downloads/${GitLab.encodePackageFilePath(directAssetPath)}`,
     );
   }
 

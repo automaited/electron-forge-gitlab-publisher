@@ -66,6 +66,29 @@ export type GitLabDirectAssetPathPrefix =
       context: GitLabDirectAssetPathContext,
     ) => string | false | null | undefined);
 
+export type GitLabDarwinUpdateFeedRelease = 'latest' | 'tag';
+
+export interface GitLabDarwinUpdateFeedConfig {
+  /**
+   * Name of the generated macOS update feed artifact.
+   * Defaults to "RELEASES.json".
+   */
+  fileName?: string;
+  /**
+   * GitLab release selector used for ZIP URLs written into RELEASES.json.
+   * "latest" uses GitLab's permalink/latest release asset download URL.
+   * "tag" uses the concrete release tag URL. Defaults to "latest".
+   */
+  release?: GitLabDarwinUpdateFeedRelease;
+}
+
+export interface GitLabUpdateFeedConfig {
+  /**
+   * Synthesize a Squirrel.Mac RELEASES.json feed for darwin ZIP artifacts.
+   */
+  darwin?: boolean | GitLabDarwinUpdateFeedConfig;
+}
+
 export interface PublisherGitLabConfig {
   /**
    * Details that identify your GitLab project. Use either this or projectId.
@@ -150,6 +173,11 @@ export interface PublisherGitLabConfig {
    * as well.
    */
   directAssetPathPrefix?: GitLabDirectAssetPathPrefix;
+  /**
+   * Opt-in update feed generation for platforms whose makers do not emit all
+   * updater metadata artifacts.
+   */
+  generateUpdateFeed?: GitLabUpdateFeedConfig;
   /**
    * Re-upload artifacts and recreate release links when a link or package file
    * already exists.
