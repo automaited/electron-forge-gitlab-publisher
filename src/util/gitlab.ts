@@ -245,6 +245,10 @@ export default class GitLab {
     );
   }
 
+  baseUrl(): string {
+    return GitLab.baseUrlFromApiUrl(this.apiUrl);
+  }
+
   releaseAssetDownloadUrl(
     projectId: string,
     release: string,
@@ -330,6 +334,10 @@ export default class GitLab {
 
   static normalizeApiUrl(apiUrl: string): string {
     return apiUrl.replace(/\/+$/g, '');
+  }
+
+  static baseUrlFromApiUrl(apiUrl: string): string {
+    return GitLab.normalizeApiUrl(apiUrl).replace(/\/api\/v4$/g, '');
   }
 
   static encodeProjectId(projectId: string | number): string {

@@ -85,6 +85,31 @@ module.exports = {
 };
 ```
 
+For private updaters that fetch immutable package registry files directly, set `generateUpdateFeed.updateUrlTemplate`. The generated `RELEASES.json` is still published as a GitLab release asset and generic package file; only `updateTo.url` changes:
+
+```js
+module.exports = {
+  publishers: [
+    {
+      name: '@automaited/electron-forge-gitlab-publisher',
+      config: {
+        projectId: 12345678,
+        directAssetPathPrefix: '{platform}/{arch}',
+        packageName: 'release-assets',
+        packageVersion: '{version}',
+        generateUpdateFeed: {
+          darwin: true,
+          updateUrlTemplate:
+            '{gitlabBaseUrl}/api/v4/projects/{projectId}/packages/generic/{packageName}/{packageVersion}/{packageFilePath}',
+        },
+      },
+    },
+  ],
+};
+```
+
+`updateUrlTemplate` supports `{gitlabBaseUrl}`, `{projectId}`, `{packageName}`, `{packageVersion}`, `{packageFilePath}`, `{artifactName}`, `{platform}`, `{arch}`, `{version}`, and `{tagName}`. Package name and version are URL-encoded as path segments, and package file paths are encoded segment by segment while preserving `/`.
+
 You can also compute the prefix per artifact:
 
 ```js
@@ -139,7 +164,7 @@ By default, `GITLAB_TOKEN` and `GITLAB_PRIVATE_TOKEN` use the `PRIVATE-TOKEN` he
 | `packageVersion` | `string \| function` | app version | Generic package version. Strings support `{version}` and `{tagName}`. |
 | `linkType` | `'other' \| 'runbook' \| 'image' \| 'package'` | `package` | GitLab release link type. |
 | `directAssetPathPrefix` | `string \| function \| false` | `/artifacts` | Prefix for GitLab direct asset links. Strings support `{platform}`, `{arch}`, `{version}`, `{tagName}`, `{artifactName}`, `{packageFileName}`, `{packageName}`, and `{packageVersion}`. Functions receive per-artifact context. Set to `false` to omit `direct_asset_path`. When explicitly set to a string or function, the generic package file path is nested under the resolved prefix as well. |
-| `generateUpdateFeed` | `{ darwin?: boolean \| { fileName?: string, release?: 'latest' \| 'tag' } }` | | Opt-in generated update feeds. `darwin: true` synthesizes `RELEASES.json` for darwin ZIP artifacts. `fileName` defaults to `RELEASES.json`; `release` defaults to `latest`. |
+| `generateUpdateFeed` | `{ darwin?: boolean \| { fileName?: string, release?: 'latest' \| 'tag' }, updateUrlTemplate?: string }` | | Opt-in generated update feeds. `darwin: true` synthesizes `RELEASES.json` for darwin ZIP artifacts. `fileName` defaults to `RELEASES.json`; `release` defaults to `latest`. `updateUrlTemplate` overrides only generated feed `updateTo.url` values. |
 | `force` | `boolean` | `false` | Replace existing release links and generic package files. |
 
 ## Self-managed GitLab

@@ -17,6 +17,7 @@ import GitLab, {
   GitLabPackageFile,
   GitLabReleaseLink,
 } from './util/gitlab';
+import { renderUpdateUrlTemplate } from './util/update-url-template';
 
 type MakeResult = PublisherOptions['makeResults'][number];
 
@@ -137,16 +138,12 @@ export default class PublisherGitLab extends PublisherBase<PublisherGitLabConfig
               version: releaseVersion,
             },
           );
-          if (generatedUpdateFeed && directAssetPathPrefix === false) {
-            throw new Error(
-              `Unable to publish generated macOS update feed "${artifactName}" because "directAssetPathPrefix" resolved to false. Generated update feeds require GitLab direct asset paths.`,
-            );
-          }
           const packageFilePath =
-            config.directAssetPathPrefix !== undefined &&
-            directAssetPathPrefix !== false
-              ? GitLab.packageFilePath(directAssetPathPrefix, packageFileName)
-              : packageFileName;
+            resolvePackageFilePath(
+              config,
+              directAssetPathPrefix,
+              packageFileName,
+            );
           const packageUrl = gitlab.genericPackageFileUrl(
             projectId,
             packageName,
@@ -316,23 +313,42 @@ function createDarwinUpdateFeedArtifacts({
       },
     );
 
-    if (zipDirectAssetPathPrefix === false) {
-      throw new Error(
-        `Unable to generate macOS update feed for "${zipArtifact.artifactName}" because "directAssetPathPrefix" resolved to false. Generated update feeds require GitLab direct asset paths for the ZIP artifact.`,
-      );
-    }
-
-    const zipDirectAssetPath = GitLab.directAssetPath(
+    const zipPackageFilePath = resolvePackageFilePath(
+      config,
       zipDirectAssetPathPrefix,
       zipPackageFileName,
     );
     const releaseSelector =
       feedConfig.release === 'tag' ? releaseName : 'permalink/latest';
-    const zipUrl = gitlab.releaseAssetDownloadUrl(
-      projectId,
-      releaseSelector,
-      zipDirectAssetPath,
-    );
+    const updateUrlTemplate = config.generateUpdateFeed?.updateUrlTemplate;
+    let zipUrl: string;
+    if (updateUrlTemplate) {
+      zipUrl = renderUpdateUrlTemplate(updateUrlTemplate, {
+        arch: zipArtifact.makeResult.arch,
+        artifactName: zipArtifact.artifactName,
+        gitlabBaseUrl: gitlab.baseUrl(),
+        packageFileName: zipPackageFileName,
+        packageFilePath: zipPackageFilePath,
+        packageName,
+        packageVersion,
+        platform: zipArtifact.makeResult.platform,
+        projectId,
+        tagName: releaseName,
+        version: releaseVersion,
+      });
+    } else {
+      if (zipDirectAssetPathPrefix === false) {
+        throw new Error(
+          `Unable to generate macOS update feed for "${zipArtifact.artifactName}" because "directAssetPathPrefix" resolved to false. Configure "generateUpdateFeed.updateUrlTemplate" or enable GitLab direct asset paths for the ZIP artifact.`,
+        );
+      }
+
+      zipUrl = gitlab.releaseAssetDownloadUrl(
+        projectId,
+        releaseSelector,
+        GitLab.directAssetPath(zipDirectAssetPathPrefix, zipPackageFileName),
+      );
+    }
     const feedArtifactPath = path.join(
       path.dirname(zipArtifact.artifactPath),
       feedConfig.fileName,
@@ -381,6 +397,17 @@ function createDarwinUpdateFeedArtifacts({
       },
     ];
   });
+}
+
+function resolvePackageFilePath(
+  config: PublisherGitLabConfig,
+  directAssetPathPrefix: string | false,
+  packageFileName: string,
+): string {
+  return config.directAssetPathPrefix !== undefined &&
+    directAssetPathPrefix !== false
+    ? GitLab.packageFilePath(directAssetPathPrefix, packageFileName)
+    : packageFileName;
 }
 
 function resolveDarwinUpdateFeedConfig(

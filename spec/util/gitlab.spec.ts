@@ -113,6 +113,16 @@ describe('GitLab', () => {
     });
   });
 
+  describe('baseUrl', () => {
+    it('removes the API v4 suffix from the GitLab API URL', () => {
+      const gitlab = new GitLab(undefined, false, {
+        apiUrl: 'https://gitlab.example.com/gitlab/api/v4',
+      });
+
+      expect(gitlab.baseUrl()).toEqual('https://gitlab.example.com/gitlab');
+    });
+  });
+
   describe('release asset download URLs', () => {
     it('builds latest-release asset download URLs', () => {
       const gitlab = new GitLab(undefined, false, {

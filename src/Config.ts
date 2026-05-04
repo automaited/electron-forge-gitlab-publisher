@@ -87,6 +87,14 @@ export interface GitLabUpdateFeedConfig {
    * Synthesize a Squirrel.Mac RELEASES.json feed for darwin ZIP artifacts.
    */
   darwin?: boolean | GitLabDarwinUpdateFeedConfig;
+  /**
+   * URL template used for generated update feed artifact URLs. Supports
+   * "{gitlabBaseUrl}", "{projectId}", "{packageName}", "{packageVersion}",
+   * "{packageFilePath}", "{artifactName}", "{platform}", "{arch}",
+   * "{version}", and "{tagName}". Dynamic path values are URL-encoded.
+   * Defaults to GitLab's release asset download URL.
+   */
+  updateUrlTemplate?: string;
 }
 
 export interface PublisherGitLabConfig {
